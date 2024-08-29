@@ -1,41 +1,30 @@
-import pyaudio
+import sounddevice as sd
 import numpy as np
 import time
-import argparse
 
-def detect_sound(threshold=1000, silence_duration=5):
-    chunk = 1024
-    format = pyaudio.paInt16
-    channels = 1
-    rate = 44100
+def is_silent(data, threshold):
+    return np.max(np.abs(data)) < threshold
 
-    p = pyaudio.PyAudio()
-    stream = p.open(format=format,
-                    channels=channels,
-                    rate=rate,
-                    input=True,
-                    frames_per_buffer=chunk)
-
-    print(f"Listening for {silence_duration} seconds of silence...")
-
-    silence_start = time.time()
-    while True:
-        data = np.frombuffer(stream.read(chunk), dtype=np.int16)
-        if np.abs(data).mean() > threshold:
-            if time.time() - silence_start >= silence_duration:
-                print("Sound detected!")
-                break
+def monitor_audio_output(threshold=0.01, sample_rate=44100, block_duration=0.05, silence_duration=5):
+    def audio_callback(indata, frames, time, status):
+        if status:
+            print(status)
+        nonlocal silent_time, start_time
+        if is_silent(indata, threshold):
+            silent_time = time.time() - start_time
+            if silent_time >= silence_duration:
+                print(f"Silence detected for {silence_duration} seconds. Sound occurred!")
+                raise sd.CallbackStop()
         else:
-            silence_start = time.time()
+            start_time = time.time()
+            silent_time = 0
 
-    stream.stop_stream()
-    stream.close()
-    p.terminate()
+    silent_time = 0
+    start_time = time.time()
+
+    print("Monitoring audio output...")
+    with sd.InputStream(callback=audio_callback, channels=1, samplerate=sample_rate, blocksize=int(sample_rate * block_duration)):
+        sd.sleep(int(silence_duration * 1000))
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Detect sound after a period of silence.")
-    parser.add_argument("--threshold", type=int, default=1000, help="Sound detection threshold")
-    parser.add_argument("--silence", type=int, default=5, help="Duration of silence before detection (seconds)")
-    args = parser.parse_args()
-
-    detect_sound(args.threshold, args.silence)
+    monitor_audio_output()
