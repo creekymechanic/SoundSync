@@ -1,2 +1,2 @@
-sounddevice==0.4.6
-numpy==1.26.3
+soundcard==0.4.2
+numpy==1.21.5

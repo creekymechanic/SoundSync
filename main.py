@@ -1,30 +1,30 @@
-import sounddevice as sd
+import soundcard as sc
 import numpy as np
 import time
+import argparse
 
-def is_silent(data, threshold):
-    return np.max(np.abs(data)) < threshold
+def detect_sound(threshold=0.01, silence_duration=5, sample_rate=44100, block_size=1024):
+    default_speaker = sc.default_speaker()
 
-def monitor_audio_output(threshold=0.01, sample_rate=44100, block_duration=0.05, silence_duration=5):
-    def audio_callback(indata, frames, time, status):
-        if status:
-            print(status)
-        nonlocal silent_time, start_time
-        if is_silent(indata, threshold):
-            silent_time = time.time() - start_time
-            if silent_time >= silence_duration:
-                print(f"Silence detected for {silence_duration} seconds. Sound occurred!")
-                raise sd.CallbackStop()
-        else:
-            start_time = time.time()
-            silent_time = 0
+    print(f"Listening for {silence_duration} seconds of silence...")
 
-    silent_time = 0
-    start_time = time.time()
-
-    print("Monitoring audio output...")
-    with sd.InputStream(callback=audio_callback, channels=1, samplerate=sample_rate, blocksize=int(sample_rate * block_duration)):
-        sd.sleep(int(silence_duration * 1000))
+    silence_start = time.time()
+    with default_speaker.recorder(samplerate=sample_rate, channels=1) as mic:
+        while True:
+            data = mic.record(numframes=block_size)
+            volume = np.abs(data).mean()
+            
+            if volume > threshold:
+                if time.time() - silence_start >= silence_duration:
+                    print("Sound detected!")
+                    break
+            else:
+                silence_start = time.time()
 
 if __name__ == "__main__":
-    monitor_audio_output()
+    parser = argparse.ArgumentParser(description="Detect sound in system audio output after a period of silence.")
+    parser.add_argument("--threshold", type=float, default=0.01, help="Sound detection threshold")
+    parser.add_argument("--silence", type=int, default=5, help="Duration of silence before detection (seconds)")
+    args = parser.parse_args()
+
+    detect_sound(args.threshold, args.silence)
