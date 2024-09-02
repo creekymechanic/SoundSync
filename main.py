@@ -48,19 +48,35 @@ def main():
 
     print("Video playback started.")
 
-    # Wait for mpv to initialize
-    time.sleep(2)
+    # Wait for mpv to initialize and create the socket
+    socket_created = False
+    for _ in range(30):  # Try for 30 seconds
+        if os.path.exists(SOCKET_PATH):
+            socket_created = True
+            break
+        time.sleep(1)
+
+    if not socket_created:
+        print("Error: MPV socket not created. Check if MPV is running correctly.")
+        mpv_process.terminate()
+        GPIO.cleanup()
+        return
 
     try:
         last_position = 0
         while True:
-            current_position = get_mpv_property("playback-time")
+            try:
+                current_position = get_mpv_property("playback-time")
+                
+                if current_position < last_position:
+                    send_signal()
+                    print("Video looped. Signal sent to ESP32.")
+                
+                last_position = current_position
+            except (json.JSONDecodeError, socket.error) as e:
+                print(f"Error communicating with MPV: {e}")
+                time.sleep(1)  # Wait a bit before retrying
             
-            if current_position < last_position:
-                send_signal()
-                print("Video looped. Signal sent to ESP32.")
-            
-            last_position = current_position
             time.sleep(0.1)  # Check every 100ms
 
     except KeyboardInterrupt:
