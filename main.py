@@ -4,7 +4,7 @@ import time
 import RPi.GPIO as GPIO
 
 # Configuration
-VIDEO_PATH = os.path.join(os.path.dirname(__file__), 'videos', 'portal_v8.mp4')  # Replace with the path to your video file
+VIDEO_PATH = os.path.join(os.path.dirname(__file__), 'videos', 'portal_v8.mp4')
 GPIO_PIN = 18  # Replace with the GPIO pin number you are using
 SIGNAL_DURATION = 1  # Duration in seconds for which the signal will be HIGH
 
@@ -21,7 +21,9 @@ def send_signal():
 def main():
     setup_gpio()
     
-    instance = vlc.Instance()
+    # Set VLC environment variable to use the X11 video output driver
+    os.environ["DISPLAY"] = ":0"  # Set the display to the primary display
+    instance = vlc.Instance("--vout=x11")  # Force VLC to use the X11 video output driver
     player = instance.media_player_new()
     media = instance.media_new(VIDEO_PATH)
     player.set_media(media)
