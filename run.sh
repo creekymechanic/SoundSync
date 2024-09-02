@@ -1,14 +1,13 @@
 #!/bin/bash
 
-# Create and activate a virtual environment
-python3 -m venv audio_monitor_env
-source audio_monitor_env/bin/activate
+# Update package lists
+sudo apt-get update
 
-# Install required packages
+# Install VLC
+sudo apt-get install -y vlc
+
+# Install Python dependencies
 pip install -r requirements.txt
 
 # Run the Python script
-python main.py
-
-# Deactivate the virtual environment
-deactivate
+python3 main.py

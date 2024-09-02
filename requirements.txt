@@ -1,2 +1,2 @@
-sounddevice==0.4.6
-numpy==1.26.2
+python-vlc==3.0.18121
+RPi.GPIO==0.7.1
