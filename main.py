@@ -29,7 +29,8 @@ def main():
     player.set_media(media)
     
     # Set the video to loop
-    media.add_option('input-repeat=-1')
+    player.set_fullscreen(True)
+    player.set_mrl(VIDEO_PATH, ":loop")
     
     player.play()
     print("Video playback started.")
