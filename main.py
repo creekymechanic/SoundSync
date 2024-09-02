@@ -1,12 +1,15 @@
 import os
-import vlc
 import time
+import json
+import socket
+import subprocess
 import RPi.GPIO as GPIO
 
 # Configuration
 VIDEO_PATH = os.path.join(os.path.dirname(__file__), 'videos', 'portal_v8.mp4')
 GPIO_PIN = 18  # Replace with the GPIO pin number you are using
 SIGNAL_DURATION = 1  # Duration in seconds for which the signal will be HIGH
+SOCKET_PATH = '/tmp/mpvsocket'
 
 def setup_gpio():
     GPIO.setmode(GPIO.BCM)
@@ -18,37 +21,52 @@ def send_signal():
     time.sleep(SIGNAL_DURATION)
     GPIO.output(GPIO_PIN, GPIO.LOW)
 
+def get_mpv_property(property_name):
+    sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+    sock.connect(SOCKET_PATH)
+    
+    command = {"command": ["get_property", property_name]}
+    sock.sendall(json.dumps(command).encode() + b'\n')
+    
+    response = sock.recv(1024).decode()
+    sock.close()
+    
+    return json.loads(response)["data"]
+
 def main():
     setup_gpio()
-    
-    # Set VLC environment variable to use the X11 video output driver
-    os.environ["DISPLAY"] = ":0"  # Set the display to the primary display
-    instance = vlc.Instance("--vout=x11")  # Force VLC to use the X11 video output driver
-    player = instance.media_player_new()
-    media = instance.media_new(VIDEO_PATH)
-    player.set_media(media)
-    
-    # Set the video to loop
-    player.set_fullscreen(True)
-    player.set_mrl(VIDEO_PATH, ":loop")
-    
-    player.play()
+
+    # Start mpv with IPC socket and looping enabled
+    mpv_command = [
+        'mpv',
+        '--input-ipc-server=' + SOCKET_PATH,
+        '--loop-file=inf',
+        '--fullscreen',
+        VIDEO_PATH
+    ]
+    mpv_process = subprocess.Popen(mpv_command)
+
     print("Video playback started.")
-    
-    # Get video duration
-    time.sleep(1)  # Wait for the player to initialize
-    duration = player.get_length() / 1000  # Duration in seconds
-    print(f"Video duration: {duration} seconds.")
-    
+
+    # Wait for mpv to initialize
+    time.sleep(2)
+
     try:
+        last_position = 0
         while True:
-            time.sleep(duration)
-            send_signal()
-            print("Signal sent to ESP32.")
+            current_position = get_mpv_property("playback-time")
+            
+            if current_position < last_position:
+                send_signal()
+                print("Video looped. Signal sent to ESP32.")
+            
+            last_position = current_position
+            time.sleep(0.1)  # Check every 100ms
+
     except KeyboardInterrupt:
         print("Stopping playback and cleaning up GPIO.")
     finally:
-        player.stop()
+        mpv_process.terminate()
         GPIO.cleanup()
 
 if __name__ == '__main__':
