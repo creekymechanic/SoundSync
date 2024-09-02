@@ -4,7 +4,7 @@
 set -e
 
 # Name of the virtual environment
-VENV_NAME="video_loop_env"
+VENV_NAME="$HOME/.venvs/video_loop_env"
 
 # Name of the Python script
 PYTHON_SCRIPT="video_loop_script.py"
@@ -18,7 +18,7 @@ fi
 # Activate virtual environment
 source $VENV_NAME/bin/activate
 
-# Install or upgrade pip
+# Upgrade pip within the virtual environment
 pip install --upgrade pip
 
 # Install requirements
