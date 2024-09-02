@@ -12,7 +12,7 @@ PYTHON_SCRIPT="video_loop_script.py"
 # Check if virtual environment exists
 if [ ! -d "$VENV_NAME" ]; then
     echo "Creating virtual environment..."
-    python3 -m venv $VENV_NAME
+    python3 -m venv $VENV_NAME --system-site-packages
 fi
 
 # Activate virtual environment
