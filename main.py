@@ -3,7 +3,7 @@ import time
 import RPi.GPIO as GPIO
 
 # Configuration
-VIDEO_PATH = '~/Desktop/portal_v8.mp4'  # Replace with the path to your video file
+VIDEO_PATH = '/portal_v8.mp4'  # Replace with the path to your video file
 GPIO_PIN = 18  # Replace with the GPIO pin number you are using
 SIGNAL_DURATION = 1  # Duration in seconds for which the signal will be HIGH
 
