@@ -8,7 +8,7 @@ source video_loop_env/bin/activate
 pip install -r requirements2.txt
 
 # Run the Python script
-python main.py
+python main2.py
 
 # Deactivate the virtual environment
 deactivate
