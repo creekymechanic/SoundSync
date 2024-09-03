@@ -7,7 +7,6 @@ import subprocess
 import signal
 import sys
 import RPi.GPIO as GPIO
-from systemd.journal import JournalHandler
 
 # Configuration
 VIDEO_PATH = os.path.join(os.path.dirname(__file__), 'videos', 'portal_v8.mp4')
@@ -16,9 +15,11 @@ SIGNAL_DURATION = 1  # Duration in seconds for which the signal will be HIGH
 SOCKET_PATH = '/tmp/mpvsocket'
 
 # Setup logging
+logging.basicConfig(level=logging.INFO, 
+                    format='%(asctime)s - %(levelname)s - %(message)s',
+                    filename='soundsync.log',
+                    filemode='a')
 log = logging.getLogger('soundsync')
-log.addHandler(JournalHandler())
-log.setLevel(logging.INFO)
 
 def setup_gpio():
     GPIO.setmode(GPIO.BCM)
