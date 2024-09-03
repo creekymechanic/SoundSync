@@ -1,2 +1,0 @@
-python-vlc==3.0.18121
-RPi.GPIO==0.7.1
