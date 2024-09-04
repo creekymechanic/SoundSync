@@ -18,9 +18,9 @@ os.environ['DISPLAY'] = ':0'
 # Setup logging
 logging.basicConfig(level=logging.INFO, 
                     format='%(asctime)s - %(levelname)s - %(message)s',
-                    filename='soundsync.log',
+                    filename='mpv_loop.log',
                     filemode='a')
-log = logging.getLogger('soundsync')
+log = logging.getLogger('mpv_loop')
 
 def setup_gpio():
     GPIO.setmode(GPIO.BCM)
@@ -62,7 +62,10 @@ def start_mpv():
         '--input-ipc-server=' + SOCKET_PATH,
         '--loop-file=inf',
         '--fullscreen',
-        '--force-window=yes',  # Force opening a window
+        '--force-window=yes',
+        '--vo=gpu',
+        '--ao=alsa',
+        '--log-file=mpv.log',
         VIDEO_PATH
     ]
     return subprocess.Popen(mpv_command, env=os.environ)
