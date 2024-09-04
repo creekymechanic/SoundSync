@@ -32,14 +32,14 @@ def send_signal():
     time.sleep(SIGNAL_DURATION)
     GPIO.output(GPIO_PIN, GPIO.LOW)
 
-def get_mpv_properties(*property_names, max_retries=3, initial_delay=0.5):
+def get_mpv_property(property_name, max_retries=3, initial_delay=0.5):
     delay = initial_delay
     for attempt in range(max_retries):
         try:
             with socket.socket(socket.AF_UNIX, socket.SOCK_STREAM) as sock:
                 sock.settimeout(2.0)
                 sock.connect(SOCKET_PATH)
-                command = {"command": ["get_property", property_names]}
+                command = {"command": ["get_property", property_name]}
                 sock.sendall(json.dumps(command).encode() + b'\n')
                 response = sock.recv(1024).decode().strip()
             
@@ -53,7 +53,7 @@ def get_mpv_properties(*property_names, max_retries=3, initial_delay=0.5):
             time.sleep(delay)
             delay *= 2  # Exponential backoff
     
-    log.error(f"Failed to get properties {property_names} after {max_retries} attempts")
+    log.error(f"Failed to get property {property_name} after {max_retries} attempts")
     return None
 
 def start_mpv():
@@ -109,17 +109,14 @@ def main():
     last_position = 0
     while True:
         try:
-            properties = get_mpv_properties("playback-time", "estimated-vf-fps")
-            if properties is not None:
-                current_position, current_fps = properties
+            current_position = get_mpv_property("playback-time")
+            if current_position is not None:
                 if current_position < last_position:
                     send_signal()
-                    log.info(f"Video looped. Signal sent to ESP32. Time: {current_position:.3f}, FPS: {current_fps:.2f}")
-                else:
-                    log.info(f"Current position: {current_position:.3f}, FPS: {current_fps:.2f}")
+                    log.info(f"Video looped. Signal sent to ESP32. {current_position:.3f}")
                 last_position = current_position
             else:
-                log.warning("Failed to get current position and FPS. Restarting MPV.")
+                log.warning("Failed to get current position. Restarting MPV.")
                 restart_mpv()
         except Exception as e:
             log.error(f"Unexpected error: {e}")
