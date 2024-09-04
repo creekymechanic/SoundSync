@@ -62,9 +62,7 @@ def start_mpv():
         '--input-ipc-server=' + SOCKET_PATH,
         '--loop-file=inf',
         '--fullscreen',
-        '--no-audio-display',  # Prevent audio-only fallback
         '--force-window=yes',  # Force opening a window
-        '--vo=x11',  # Use X11 video output
         VIDEO_PATH
     ]
     return subprocess.Popen(mpv_command, env=os.environ)
