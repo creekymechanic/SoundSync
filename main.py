@@ -32,50 +32,6 @@ def send_signal():
     time.sleep(SIGNAL_DURATION)
     GPIO.output(GPIO_PIN, GPIO.LOW)
 
-def get_mpv_property(property_name, max_retries=3, initial_delay=0.5):
-    delay = initial_delay
-    for attempt in range(max_retries):
-        try:
-            with socket.socket(socket.AF_UNIX, socket.SOCK_STREAM) as sock:
-                sock.settimeout(2.0)
-                sock.connect(SOCKET_PATH)
-                command = {"command": ["get_property", property_name]}
-                sock.sendall(json.dumps(command).encode() + b'\n')
-                response = sock.recv(1024).decode().strip()
-            
-            json_response = json.loads(response)
-            if "data" in json_response:
-                return json_response["data"]
-            else:
-                log.warning(f"Unexpected response format: {response}")
-        except (json.JSONDecodeError, socket.error, KeyError) as e:
-            log.error(f"Error on attempt {attempt + 1}: {e}")
-            time.sleep(delay)
-            delay *= 2  # Exponential backoff
-    
-    log.error(f"Failed to get property {property_name} after {max_retries} attempts")
-    return None
-
-def start_mpv():
-    mpv_command = [
-        'mpv',
-        '--input-ipc-server=' + SOCKET_PATH,
-        '--loop-file=inf',
-        '--fullscreen',
-        '--force-window=yes',  # Force opening a window
-        VIDEO_PATH
-    ]
-    return subprocess.Popen(mpv_command, env=os.environ)
-
-def restart_mpv():
-    global mpv_process
-    log.info("Restarting MPV...")
-    if mpv_process:
-        mpv_process.terminate()
-        mpv_process.wait()
-    mpv_process = start_mpv()
-    time.sleep(2)  # Wait for MPV to initialize
-
 def get_mpv_properties(*property_names, max_retries=3, initial_delay=0.5):
     delay = initial_delay
     for attempt in range(max_retries):
@@ -99,6 +55,26 @@ def get_mpv_properties(*property_names, max_retries=3, initial_delay=0.5):
     
     log.error(f"Failed to get properties {property_names} after {max_retries} attempts")
     return None
+
+def start_mpv():
+    mpv_command = [
+        'mpv',
+        '--input-ipc-server=' + SOCKET_PATH,
+        '--loop-file=inf',
+        '--fullscreen',
+        '--force-window=yes',  # Force opening a window
+        VIDEO_PATH
+    ]
+    return subprocess.Popen(mpv_command, env=os.environ)
+
+def restart_mpv():
+    global mpv_process
+    log.info("Restarting MPV...")
+    if mpv_process:
+        mpv_process.terminate()
+        mpv_process.wait()
+    mpv_process = start_mpv()
+    time.sleep(2)  # Wait for MPV to initialize
 
 def signal_handler(signum, frame):
     log.info("Received termination signal. Cleaning up...")
