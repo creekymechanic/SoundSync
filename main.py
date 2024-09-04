@@ -13,6 +13,7 @@ VIDEO_PATH = os.path.join(os.path.dirname(__file__), 'videos', 'portal_v8.mp4')
 GPIO_PIN = 18  # Replace with the GPIO pin number you are using
 SIGNAL_DURATION = 1  # Duration in seconds for which the signal will be HIGH
 SOCKET_PATH = '/tmp/mpvsocket'
+os.environ['DISPLAY'] = ':0'
 
 # Setup logging
 logging.basicConfig(level=logging.INFO, 
@@ -61,9 +62,12 @@ def start_mpv():
         '--input-ipc-server=' + SOCKET_PATH,
         '--loop-file=inf',
         '--fullscreen',
+        '--no-audio-display',  # Prevent audio-only fallback
+        '--force-window=yes',  # Force opening a window
+        '--vo=x11',  # Use X11 video output
         VIDEO_PATH
     ]
-    return subprocess.Popen(mpv_command)
+    return subprocess.Popen(mpv_command, env=os.environ)
 
 def restart_mpv():
     global mpv_process
