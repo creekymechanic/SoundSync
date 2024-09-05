@@ -25,12 +25,12 @@ log = logging.getLogger('mpv_loop')
 def setup_gpio():
     GPIO.setmode(GPIO.BCM)
     GPIO.setup(GPIO_PIN, GPIO.OUT)
-    GPIO.output(GPIO_PIN, GPIO.LOW)
+    GPIO.output(GPIO_PIN, GPIO.HIGH)
 
 def send_signal():
-    GPIO.output(GPIO_PIN, GPIO.HIGH)
-    time.sleep(SIGNAL_DURATION)
     GPIO.output(GPIO_PIN, GPIO.LOW)
+    time.sleep(SIGNAL_DURATION)
+    GPIO.output(GPIO_PIN, GPIO.HIGH)
 
 def get_mpv_property(property_name, max_retries=3, initial_delay=0.5):
     delay = initial_delay
